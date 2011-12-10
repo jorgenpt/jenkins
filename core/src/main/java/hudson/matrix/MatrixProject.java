@@ -41,7 +41,6 @@ import hudson.model.Items;
 import hudson.model.JDK;
 import hudson.model.Job;
 import hudson.model.Label;
-import hudson.model.Queue.FlyweightTask;
 import hudson.model.ResourceController;
 import hudson.model.Result;
 import hudson.model.SCMedItem;
@@ -88,7 +87,7 @@ import java.util.logging.Logger;
  *
  * @author Kohsuke Kawaguchi
  */
-public class MatrixProject extends AbstractProject<MatrixProject,MatrixBuild> implements TopLevelItem, SCMedItem, ItemGroup<MatrixConfiguration>, Saveable, FlyweightTask, BuildableItemWithBuildWrappers {
+public class MatrixProject extends AbstractProject<MatrixProject,MatrixBuild> implements TopLevelItem, SCMedItem, ItemGroup<MatrixConfiguration>, Saveable, BuildableItemWithBuildWrappers {
     /**
      * Configuration axes.
      */
@@ -668,6 +667,14 @@ public class MatrixProject extends AbstractProject<MatrixProject,MatrixBuild> im
         public List<MatrixConfigurationSorterDescriptor> getSorterDescriptors() {
             return MatrixConfigurationSorterDescriptor.all();
         }
+    }
+
+    /**
+     * Flyweight projects do not consume an {@link Executor}.
+     */
+    @Override
+    public boolean isFlyweight() {
+        return true;
     }
 
     private static final Logger LOGGER = Logger.getLogger(MatrixProject.class.getName());

@@ -50,6 +50,10 @@ public abstract class AbstractQueueTask implements Queue.Task {
         return false;
     }
 
+    public boolean isFlyweight() {
+        return this instanceof Queue.FlyweightTask;
+    }
+
     public CauseOfBlockage getCauseOfBlockage() {
         return null;
     }

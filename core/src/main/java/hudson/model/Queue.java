@@ -969,7 +969,7 @@ public class Queue extends ResourceController implements Saveable {
     }
 
     private void makeBuildable(BuildableItem p) {
-        if(Jenkins.FLYWEIGHT_SUPPORT && p.task instanceof FlyweightTask && !ifBlockedByHudsonShutdown(p.task)) {
+        if(Jenkins.FLYWEIGHT_SUPPORT && p.task.isFlyweight() && !ifBlockedByHudsonShutdown(p.task)) {
             ConsistentHash<Node> hash = new ConsistentHash<Node>(new Hash<Node>() {
                 public String hash(Node node) {
                     return node.getNodeName();
@@ -1015,7 +1015,9 @@ public class Queue extends ResourceController implements Saveable {
      * Marks {@link Task}s that do not consume {@link Executor}.
      * @see OneOffExecutor
      * @since 1.318
+     * @deprecated As of 1.442, replaced by {@link Task#isFlyweight()}
      */
+    @Deprecated
     public interface FlyweightTask extends Task {}
 
     /**
@@ -1125,6 +1127,15 @@ public class Queue extends ResourceController implements Saveable {
          * @since 1.338
          */
         boolean isConcurrentBuild();
+
+        /**
+         * True if the task does not consume an {@link Executor} when it's
+         * building - replaces {@link FlyweightTask} subclass to allow runtime
+         * configuration.
+         *
+         * @since 1.444
+         */
+        boolean isFlyweight();
 
         /**
          * Obtains the {@link SubTask}s that constitute this task.

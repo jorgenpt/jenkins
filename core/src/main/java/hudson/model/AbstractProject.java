@@ -45,6 +45,7 @@ import hudson.model.Descriptor.FormException;
 import hudson.model.Fingerprint.RangeSet;
 import hudson.model.Queue.Executable;
 import hudson.model.Queue.Task;
+import hudson.model.Queue.FlyweightTask;
 import hudson.model.queue.SubTask;
 import hudson.model.Queue.WaitingItem;
 import hudson.model.RunMap.Constructor;
@@ -223,6 +224,11 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
     private boolean concurrentBuild;
 
     /**
+     * True to keep builds of this project from consuming an executor slot.
+     */
+    protected volatile boolean dontConsumeExecutor = false;
+
+    /**
      * See {@link #setCustomWorkspace(String)}.
      *
      * @since 1.410
@@ -299,6 +305,21 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
         concurrentBuild = b;
         save();
     }
+
+    /**
+     * Does this project not consume an {@link Executor}?
+     *
+     * @since 1.444
+     */
+    public boolean isFlyweight() {
+        return this instanceof Queue.FlyweightTask || dontConsumeExecutor;
+    }
+
+    public void setDontConsumeExecutor(boolean b) throws IOException {
+        dontConsumeExecutor = b;
+        save();
+    }
+
 
     /**
      * If this project is configured to be always built on this node,
@@ -1698,6 +1719,7 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
         canRoam = assignedNode==null;
 
         concurrentBuild = req.getSubmittedForm().has("concurrentBuild");
+        dontConsumeExecutor = req.getSubmittedForm().has("dontConsumeExecutor");
 
         authToken = BuildAuthorizationToken.create(req);
 

@@ -99,6 +99,10 @@ public abstract class QueueTaskFilter implements Queue.Task {
         return base.isConcurrentBuild();
     }
 
+    public boolean isFlyweight() {
+        return base.isFlyweight();
+    }
+
     public String getDisplayName() {
         return base.getDisplayName();
     }
