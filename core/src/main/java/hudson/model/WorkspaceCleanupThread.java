@@ -27,6 +27,7 @@ import hudson.FilePath;
 import hudson.Util;
 import hudson.Extension;
 import jenkins.model.Jenkins;
+import hudson.slaves.WorkspaceList;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -35,6 +36,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Clean up old left-over workspaces from slaves.
@@ -82,18 +85,20 @@ public class WorkspaceCleanupThread extends AsyncPeriodicWork {
         File[] dirs = jobs.listFiles(DIR_FILTER);
         if(dirs==null)      return;
         for (File dir : dirs) {
-            FilePath ws = new FilePath(new File(dir, "workspace"));
-            if(shouldBeDeleted(dir.getName(),ws,h)) {
-                delete(ws);
+            TopLevelItem item = Jenkins.getInstance().getItem(dir.getName());
+            FilePath dirPath = new FilePath(dir);
+            FilePath[] workspaces = dir.list("workspace" + WorkspaceList.COMBINATOR + "*");
+            for (FilePath ws : workspaces) {
+                if(shouldBeDeleted(item, ws, h)) {
+                    delete(ws);
+                }
             }
         }
     }
 
-    private boolean shouldBeDeleted(String workspaceDirectoryName, FilePath dir, Node n) throws IOException, InterruptedException {
+    private boolean shouldBeDeleted(TopLevelItem item, FilePath dir, Node n) throws IOException, InterruptedException {
         // TODO: the use of remoting is not optimal.
         // One remoting can execute "exists", "lastModified", and "delete" all at once.
-        TopLevelItem item = Jenkins.getInstance().getItem(workspaceDirectoryName);
-
         if(!dir.exists())
             return false;
 
@@ -142,7 +147,16 @@ public class WorkspaceCleanupThread extends AsyncPeriodicWork {
             List<FilePath> dirs = path.list(DIR_FILTER);
             if(dirs ==null) return;
             for (FilePath dir : dirs) {
-                if(shouldBeDeleted(dir.getName(),dir,s))
+                TopLevelItem item = Jenkins.getInstance().getItem(dir.getName());
+                if (item == null) {
+                  String jobName = dir.getName();
+                  Matcher matcher = CONCURRENT_WORKSPACE_PATTERN.matcher(jobName);
+                  if (matcher.find()) {
+                      jobName = matcher.replaceFirst("");
+                      item = Jenkins.getInstance().getItem(jobName);
+                  }
+                }
+                if(shouldBeDeleted(item, dir, s))
                     delete(dir);
             }
         } catch (IOException e) {
@@ -171,6 +185,8 @@ public class WorkspaceCleanupThread extends AsyncPeriodicWork {
     private static final long DAY = 1000*60*60*24;
 
     private static final Logger LOGGER = Logger.getLogger(WorkspaceCleanupThread.class.getName());
+
+    private static final Pattern CONCURRENT_WORKSPACE_PATTERN = Pattern.compile(WorkspaceList.COMBINATOR + "\\d+$")
 
     /**
      * Can be used to disable workspace clean up.
