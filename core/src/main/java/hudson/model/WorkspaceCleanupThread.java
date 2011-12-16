@@ -87,7 +87,7 @@ public class WorkspaceCleanupThread extends AsyncPeriodicWork {
         for (File dir : dirs) {
             TopLevelItem item = Jenkins.getInstance().getItem(dir.getName());
             FilePath dirPath = new FilePath(dir);
-            FilePath[] workspaces = dir.list("workspace" + WorkspaceList.COMBINATOR + "*");
+            FilePath[] workspaces = dirPath.list("workspace" + WorkspaceList.COMBINATOR + "*");
             for (FilePath ws : workspaces) {
                 if(shouldBeDeleted(item, ws, h)) {
                     delete(ws);
@@ -186,7 +186,7 @@ public class WorkspaceCleanupThread extends AsyncPeriodicWork {
 
     private static final Logger LOGGER = Logger.getLogger(WorkspaceCleanupThread.class.getName());
 
-    private static final Pattern CONCURRENT_WORKSPACE_PATTERN = Pattern.compile(WorkspaceList.COMBINATOR + "\\d+$")
+    private static final Pattern CONCURRENT_WORKSPACE_PATTERN = Pattern.compile(WorkspaceList.COMBINATOR + "\\d+$");
 
     /**
      * Can be used to disable workspace clean up.
